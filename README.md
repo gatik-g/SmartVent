@@ -146,4 +146,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-*This project was created for educational purposes as a science fair demonstration.*
+*This project was created for educational purposes as part of the 3D printing challenge hosted by the MSJ Rotary Club, check out our instructable for more information https://www.instructables.com/SmartVent-Intelligent-Climate-Control/.*
