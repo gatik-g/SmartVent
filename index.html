@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Vent Control System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .vent-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            width: calc(33% - 20px);
+            min-width: 250px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        .vent-card.vent1 {
+            border-top: 5px solid #8B4513; /* Brown */
+        }
+        .vent-card.vent2 {
+            border-top: 5px solid #607D8B; /* Marble-like color */
+        }
+        .vent-card.vent3 {
+            border-top: 5px solid #E0E0E0; /* White */
+        }
+        .vent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .vent-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 0;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-online {
+            background-color: #4CAF50;
+        }
+        .status-offline {
+            background-color: #f44336;
+        }
+        .sensor-data {
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        .data-value {
+            font-weight: bold;
+        }
+        .servo-control {
+            margin-top: 15px;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .slider {
+            flex-grow: 1;
+            margin: 0 10px;
+        }
+        .control-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .refresh-btn {
+            background-color: #2196F3;
+        }
+        .refresh-btn:hover {
+            background-color: #0b7dda;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .status-message {
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
+        .preset-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .preset-btn {
+            flex: 1;
+            margin: 0 5px;
+            background-color: #607D8B;
+            font-size: 12px;
+            padding: 6px 8px;
+        }
+        .preset-btn:hover {
+            background-color: #455A64;
+        }
+        .system-controls {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .system-presets {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .system-preset-btn {
+            background-color: #673AB7;
+            margin: 5px;
+        }
+        .system-preset-btn:hover {
+            background-color: #5E35B1;
+        }
+        .chart-container {
+            width: 100%;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .auto-mode-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .auto-mode-settings {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .auto-mode-settings input {
+            width: 60px;
+            padding: 5px;
+            margin: 0 10px;
+        }
+        .auto-mode-toggle {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-left: 10px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-toggle {
+            background-color: #4CAF50;
+        }
+        input:checked + .slider-toggle:before {
+            transform: translateX(26px);
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #ddd;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        .tab.active {
+            background-color: white;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Smart Vent Control System</h1>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="dashboard">Dashboard</div>
+        <div class="tab" data-tab="charts">Temperature Charts</div>
+        <div class="tab" data-tab="auto">Auto Mode</div>
+    </div>
+    
+    <div class="tab-content active" id="dashboard-tab">
+        <div class="system-controls">
+            <h3>System Controls</h3>
+            <div class="control-buttons">
+                <button id="test-connection-btn">Test Connections</button>
+                <button id="refresh-data-btn" class="refresh-btn">Refresh Sensor Data</button>
+                <button id="auto-refresh-toggle" class="refresh-btn">Auto Refresh: OFF</button>
+            </div>
+            
+            <h3>System Presets</h3>
+            <div class="system-presets">
+                <button class="system-preset-btn" data-value="0">All Open</button>
+                <button class="system-preset-btn" data-value="25">25% Closed</button>
+                <button class="system-preset-btn" data-value="50">Half Closed</button>
+                <button class="system-preset-btn" data-value="75">75% Closed</button>
+                <button class="system-preset-btn" data-value="100">All Closed</button>
+            </div>
+            
+            <p id="status-message" class="status-message">Ready to connect to vents.</p>
+        </div>
+        
+        <div class="dashboard" id="dashboard">
+            <!-- Vent cards will be generated here -->
+        </div>
+    </div>
+    
+    <div class="tab-content" id="charts-tab">
+        <div class="chart-container">
+            <h3>Temperature History</h3>
+            <canvas id="tempChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Humidity History</h3>
+            <canvas id="humidityChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="tab-content" id="auto-tab">
+        <div class="auto-mode-container">
+            <h3>Automatic Temperature Control</h3>
+            
+            <div class="auto-mode-toggle">
+                <span>Auto Mode:</span>
+                <label class="switch">
+                    <input type="checkbox" id="auto-mode-toggle">
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+            
+            <div class="auto-mode-settings">
+                <div>
+                    <label for="target-temp">Target Temperature:</label>
+                    <input type="number" id="target-temp" value="22" min="15" max="30" step="0.5"> °C
+                </div>
+                <div style="margin-left: 20px;">
+                    <label for="temp-threshold">Threshold:</label>
+                    <input type="number" id="temp-threshold" value="1.0" min="0.5" max="5" step="0.5"> °C
+                </div>
+                <button id="save-auto-settings">Save Settings</button>
+            </div>
+            
+            <p class="status-message" id="auto-mode-status">Auto mode is disabled.</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize vent data
+        const vents = {
+            "vent1": { name: "Vent 1 (Brown)", status: "unknown", temperature: null, humidity: null, percentage: 50 },
+            "vent2": { name: "Vent 2 (Marble)", status: "unknown", temperature: null, humidity: null, percentage: 50 },
+            "vent3": { name: "Vent 3 (White)", status: "unknown", temperature: null, humidity: null, percentage: 50 }
+        };
+        
+        // Charts
+        let tempChart;
+        let humidityChart;
+        
+        // Auto refresh timer
+        let autoRefreshTimer = null;
+        let autoRefreshEnabled = false;
+        
+        // Generate vent cards
+        function generateVentCards() {
+            const dashboard = document.getElementById('dashboard');
+            dashboard.innerHTML = '';
+            
+            for (const [ventId, ventData] of Object.entries(vents)) {
+                const card = document.createElement('div');
+                card.className = `vent-card ${ventId}`;
+                card.id = `card-${ventId}`;
+                
+                const statusClass = ventData.status === 'ok' ? 'status-online' : 'status-offline';
+                
+                let cardHtml = `
+                    <div class="vent-header">
+                        <h3 class="vent-title">${ventData.name}</h3>
+                        <span class="status-indicator ${statusClass}" id="status-${ventId}"></span>
+                    </div>
+                    <div class="sensor-data">
+                        <div>Temperature: <span class="data-value" id="temp-${ventId}">${ventData.temperature !== null ? ventData.temperature + '°C' : 'N/A'}</span></div>
+                        <div>Humidity: <span class="data-value" id="humidity-${ventId}">${ventData.humidity !== null ? ventData.humidity + '%' : 'N/A'}</span></div>
+                        <div class="timestamp" id="timestamp-${ventId}">${ventData.timestamp || ''}</div>
+                    </div>
+                    <div class="servo-control">
+                        <div>Percentage Closed:</div>
+                        <div class="slider-container">
+                            <span>0%</span>
+                            <input type="range" min="0" max="100" value="${ventData.percentage}" class="slider" id="slider-${ventId}">
+                            <span>100%</span>
+                        </div>
+                        <div>Closed: <span id="percentage-value-${ventId}">${ventData.percentage}%</span></div>
+                        <button class="set-angle-btn" data-vent="${ventId}">Set Position</button>
+                        <div class="preset-buttons">
+                            <button class="preset-btn" data-vent="${ventId}" data-value="0">Open</button>
+                            <button class="preset-btn" data-vent="${ventId}" data-value="50">Half</button>
+                            <button class="preset-btn" data-vent="${ventId}" data-value="100">Closed</button>
+                        </div>
+                    </div>
+                `;
+                
+                card.innerHTML = cardHtml;
+                dashboard.appendChild(card);
+                
+                // Add event listener for slider
+                const slider = document.getElementById(`slider-${ventId}`);
+                slider.addEventListener('input', function() {
+                    document.getElementById(`percentage-value-${ventId}`).textContent = this.value + '%';
+                });
+            }
+            
+            // Add event listeners for set angle buttons
+            document.querySelectorAll('.set-angle-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const ventId = this.getAttribute('data-vent');
+                    const percentage = document.getElementById(`slider-${ventId}`).value;
+                    setServoPercentage(ventId, percentage);
+                });
+            });
+            
+            // Add event listeners for preset buttons
+            document.querySelectorAll('.preset-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const ventId = this.getAttribute('data-vent');
+                    const percentage = this.getAttribute('data-value');
+                    // Update slider position
+                    document.getElementById(`slider-${ventId}`).value = percentage;
+                    document.getElementById(`percentage-value-${ventId}`).textContent = percentage + '%';
+                    // Set servo position
+                    setServoPercentage(ventId, percentage);
+                });
+            });
+        }
+        
+        // Initialize charts
+        function initCharts() {
+            const tempCtx = document.getElementById('tempChart').getContext('2d');
+            tempChart = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Vent 1 (Brown)',
+                            data: [],
+                            borderColor: '#8B4513',
+                            backgroundColor: 'rgba(139, 69, 19, 0.1)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Vent 2 (Marble)',
+                            data: [],
+                            borderColor: '#607D8B',
+                            backgroundColor: 'rgba(96, 125, 139, 0.1)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Vent 3 (White)',
+                            data: [],
+                            borderColor: '#9E9E9E',
+                            backgroundColor: 'rgba(158, 158, 158, 0.1)',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const humidityCtx = document.getElementById('humidityChart').getContext('2d');
+            humidityChart = new Chart(humidityCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Vent 1 (Brown)',
+                            data: [],
+                            borderColor: '#8B4513',
+                            backgroundColor: 'rgba(139, 69, 19, 0.1)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Vent 2 (Marble)',
+                            data: [],
+                            borderColor: '#607D8B',
+                            backgroundColor: 'rgba(96, 125, 139, 0.1)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Vent 3 (White)',
+                            data: [],
+                            borderColor: '#9E9E9E',
+                            backgroundColor: 'rgba(158, 158, 158, 0.1)',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Humidity (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update charts with historical data
+        function updateCharts() {
+            fetch('/api/history')
+                .then(response => response.json())
+                .then(data => {
+                    // Process data for charts
+                    const ventIds = ['vent1', 'vent2', 'vent3'];
+                    const timestamps = [];
+                    const tempData = [[], [], []];
+                    const humidityData = [[], [], []];
+                    
+                    // Get the latest 20 timestamps from any vent with data
+                    let maxDataPoints = 0;
+                    for (const ventId of ventIds) {
+                        if (data[ventId] && data[ventId].length > maxDataPoints) {
+                            maxDataPoints = data[ventId].length;
+                        }
+                    }
+                    
+                    // Extract data for each vent
+                    for (let i = 0; i < maxDataPoints; i++) {
+                        for (let j = 0; j < ventIds.length; j++) {
+                            const ventId = ventIds[j];
+                            const ventData = data[ventId];
+                            
+                            if (ventData && i < ventData.length) {
+                                if (i === 0 || !timestamps.includes(ventData[i].timestamp)) {
+                                    timestamps.push(ventData[i].timestamp);
+                                }
+                                tempData[j].push(ventData[i].temperature);
+                                humidityData[j].push(ventData[i].humidity);
+                            }
+                        }
+                    }
+                    
+                    // Update temperature chart
+                    tempChart.data.labels = timestamps;
+                    for (let i = 0; i < ventIds.length; i++) {
+                        tempChart.data.datasets[i].data = tempData[i];
+                    }
+                    tempChart.update();
+                    
+                    // Update humidity chart
+                    humidityChart.data.labels = timestamps;
+                    for (let i = 0; i < ventIds.length; i++) {
+                        humidityChart.data.datasets[i].data = humidityData[i];
+                    }
+                    humidityChart.update();
+                })
+                .catch(error => {
+                    console.error('Error fetching history:', error);
+                });
+        }
+        
+        // Test connections to all vents
+        function testConnections() {
+            const statusMessage = document.getElementById('status-message');
+            statusMessage.textContent = 'Testing connections...';
+            
+            fetch('/api/test-connections')
+                .then(response => response.json())
+                .then(data => {
+                    statusMessage.textContent = 'Connection test completed.';
+                    
+                    for (const [ventId, result] of Object.entries(data)) {
+                        vents[ventId].status = result.status;
+                        const statusIndicator = document.getElementById(`status-${ventId}`);
+                        if (statusIndicator) {
+                            statusIndicator.className = `status-indicator ${result.status === 'ok' ? 'status-online' : 'status-offline'}`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    statusMessage.textContent = 'Error testing connections: ' + error.message;
+                });
+        }
+        
+        // Get sensor data from all vents
+        function getSensorData() {
+            const statusMessage = document.getElementById('status-message');
+            statusMessage.textContent = 'Fetching sensor data...';
+            
+            fetch('/api/sensor-data')
+                .then(response => response.json())
+                .then(data => {
+                    statusMessage.textContent = 'Sensor data updated.';
+                    
+                    for (const [ventId, result] of Object.entries(data)) {
+                        if (ventId !== 'auto_mode' && result.temperature !== undefined) {
+                            vents[ventId].temperature = result.temperature;
+                            vents[ventId].humidity = result.humidity;
+                            vents[ventId].timestamp = result.timestamp;
+                            
+                            // Update display
+                            const tempElement = document.getElementById(`temp-${ventId}`);
+                            const humidityElement = document.getElementById(`humidity-${ventId}`);
+                            const timestampElement = document.getElementById(`timestamp-${ventId}`);
+                            
+                            if (tempElement) tempElement.textContent = result.temperature + '°C';
+                            if (humidityElement) humidityElement.textContent = result.humidity + '%';
+                            if (timestampElement) timestampElement.textContent = 'Last updated: ' + result.timestamp;
+                        }
+                    }
+                    
+                    // If auto mode made adjustments, update status
+                    if (data.auto_mode && data.auto_mode.status === 'adjusted') {
+                        const autoStatus = document.getElementById('auto-mode-status');
+                        autoStatus.textContent = `Auto mode adjusted vents to ${data.auto_mode.percentage}% Closed (Avg temp: ${data.auto_mode.avg_temp.toFixed(1)}°C, Target: ${data.auto_mode.target}°C)`;
+                    }
+                    
+                    // Update charts
+                    updateCharts();
+                })
+                .catch(error => {
+                    statusMessage.textContent = 'Error fetching sensor data: ' + error.message;
+                });
+        }
+        
+        // Set servo percentage for a vent
+        function setServoPercentage(ventId, percentage) {
+            const statusMessage = document.getElementById('status-message');
+            statusMessage.textContent = `Setting ${vents[ventId].name} to ${percentage}% Closed...`;
+            
+            fetch('/api/set-servo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ vent_id: ventId, percentage: percentage }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusMessage.textContent = `${vents[ventId].name} position set to ${percentage}% Closed.`;
+                    vents[ventId].percentage = parseInt(percentage);
+                } else {
+                    statusMessage.textContent = `Error setting ${vents[ventId].name} position: ${data.message || 'Unknown error'}`;
+                }
+            })
+            .catch(error => {
+                statusMessage.textContent = `Error setting servo position: ${error.message}`;
+            });
+        }
+        
+        // Set all servos to the same percentage
+        function setAllServos(percentage) {
+            const statusMessage = document.getElementById('status-message');
+            statusMessage.textContent = `Setting all vents to ${percentage}% Closed...`;
+            
+            fetch('/api/set-all-servos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ percentage: percentage }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    statusMessage.textContent = `All vents set to ${percentage}% Closed.`;
+                    
+                    // Update all sliders and values
+                    for (const ventId in vents) {
+                        vents[ventId].percentage = parseInt(percentage);
+                        const slider = document.getElementById(`slider-${ventId}`);
+                        const percentageValue = document.getElementById(`percentage-value-${ventId}`);
+                        
+                        if (slider) slider.value = percentage;
+                        if (percentageValue) percentageValue.textContent = percentage + '%';
+                    }
+                } else {
+                    statusMessage.textContent = `Error setting vent positions: ${data.message || 'Unknown error'}`;
+                }
+            })
+            .catch(error => {
+                statusMessage.textContent = `Error setting servo positions: ${error.message}`;
+            });
+        }
+        
+        // Toggle auto refresh
+        function toggleAutoRefresh() {
+            const button = document.getElementById('auto-refresh-toggle');
+            
+            if (autoRefreshEnabled) {
+                // Disable auto refresh
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+                autoRefreshEnabled = false;
+                button.textContent = 'Auto Refresh: OFF';
+            } else {
+                // Enable auto refresh (every 30 seconds)
+                autoRefreshTimer = setInterval(getSensorData, 30000);
+                autoRefreshEnabled = true;
+                button.textContent = 'Auto Refresh: ON (30s)';
+            }
+        }
+        
+        // Get auto mode status
+        function getAutoModeStatus() {
+            fetch('/api/auto-mode-status')
+                .then(response => response.json())
+                .then(data => {
+                    // Update toggle switch
+                    document.getElementById('auto-mode-toggle').checked = data.enabled;
+                    
+                    // Update settings inputs
+                    document.getElementById('target-temp').value = data.settings.target_temp;
+                    document.getElementById('temp-threshold').value = data.settings.threshold;
+                    
+                    // Update status message
+                    const statusElement = document.getElementById('auto-mode-status');
+                    if (data.enabled) {
+                        statusElement.textContent = `Auto mode is enabled. Target: ${data.settings.target_temp}°C, Threshold: ±${data.settings.threshold}°C`;
+                    } else {
+                        statusElement.textContent = 'Auto mode is disabled.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error getting auto mode status:', error);
+                });
+        }
+        
+        // Set auto mode settings
+        function setAutoModeSettings() {
+            const enabled = document.getElementById('auto-mode-toggle').checked;
+            const targetTemp = parseFloat(document.getElementById('target-temp').value);
+            const threshold = parseFloat(document.getElementById('temp-threshold').value);
+            
+            fetch('/api/auto-mode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    enabled: enabled,
+                    settings: {
+                        target_temp: targetTemp,
+                        threshold: threshold
+                    }
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusElement = document.getElementById('auto-mode-status');
+                
+                if (data.enabled) {
+                    statusElement.textContent = `Auto mode is enabled. Target: ${data.settings.target_temp}°C, Threshold: ±${data.settings.threshold}°C`;
+                    
+                    if (data.adjustment_result && data.adjustment_result.status === 'adjusted') {
+                        statusElement.textContent += ` - Vents adjusted to ${data.adjustment_result.percentage}% Closed.`;
+                    }
+                } else {
+                    statusElement.textContent = 'Auto mode is disabled.';
+                }
+            })
+            .catch(error => {
+                console.error('Error setting auto mode:', error);
+            });
+        }
+        
+        // Tab switching
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all tab content
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Show selected tab content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    
+                    // If charts tab is selected, update charts
+                    if (tabId === 'charts') {
+                        updateCharts();
+                    }
+                    
+                    // If auto mode tab is selected, get current status
+                    if (tabId === 'auto') {
+                        getAutoModeStatus();
+                    }
+                });
+            });
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Generate vent cards
+            generateVentCards();
+            
+            // Initialize charts
+            initCharts();
+            
+            // Setup tabs
+            setupTabs();
+            
+            // Add event listeners
+            document.getElementById('test-connection-btn').addEventListener('click', testConnections);
+            document.getElementById('refresh-data-btn').addEventListener('click', getSensorData);
+            document.getElementById('auto-refresh-toggle').addEventListener('click', toggleAutoRefresh);
+            
+            // Add event listeners for system preset buttons
+            document.querySelectorAll('.system-preset-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const percentage = this.getAttribute('data-value');
+                    setAllServos(percentage);
+                });
+            });
+            
+            // Add event listeners for auto mode
+            document.getElementById('auto-mode-toggle').addEventListener('change', setAutoModeSettings);
+            document.getElementById('save-auto-settings').addEventListener('click', setAutoModeSettings);
+            
+            // Test connections on page load
+            testConnections();
+            
+            // Get initial sensor data
+            setTimeout(getSensorData, 1000);
+            
+            // Enable auto refresh by default
+            setTimeout(toggleAutoRefresh, 2000);
+        });
+    </script>
+</body>
+</html>
